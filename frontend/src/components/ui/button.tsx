@@ -34,18 +34,16 @@ export interface ButtonProps
   asChild?: boolean;
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, asChild = false, ...props }, ref) => {
-    // Note: I haven't installed @radix-ui/react-slot yet, so for now I'll skip asChild logic or implement a basic version.
-    // Actually, Slot is standard in shadcn setup. I'll just use simple button for now if I don't want to install radix slot,
-    // but the plan is "modern standards" so I should probably use it.
-    // I'll stick to simple button for this first pass to avoid dependency hell if not explicitly asked for Radix.
-    const Comp = 'button';
-    return (
-      <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
-    );
-  },
-);
+const Button = ({ className, variant, size, asChild = false, ref, ...props }: ButtonProps & { ref?: React.Ref<HTMLButtonElement> }) => {
+  // Note: I haven't installed @radix-ui/react-slot yet, so for now I'll skip asChild logic or implement a basic version.
+  // Actually, Slot is standard in shadcn setup. I'll just use simple button for now if I don't want to install radix slot,
+  // but the plan is "modern standards" so I should probably use it.
+  // I'll stick to simple button for this first pass to avoid dependency hell if not explicitly asked for Radix.
+  const Comp = 'button';
+  return (
+    <Comp className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />
+  );
+};
 Button.displayName = 'Button';
 
 export { Button, buttonVariants };
