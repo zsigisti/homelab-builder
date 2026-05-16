@@ -481,7 +481,7 @@ export default function ProjectsPage() {
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-2 text-muted-foreground/40">
-                      <Folder className="h-12 w-12" />
+                      <Folder className="size-12" />
                     </div>
                   )}
 

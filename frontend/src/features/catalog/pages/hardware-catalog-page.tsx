@@ -130,7 +130,7 @@ function SubmitHardwareModal({ onClose }: { onClose: () => void }) {
 
         {success ? (
           <div className="flex flex-col items-center justify-center py-12 px-6 text-center">
-            <div className="h-14 w-14 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
+            <div className="size-14 rounded-full bg-green-500/10 flex items-center justify-center mb-4">
               <Check className="size-7 text-green-500" />
             </div>
             <h3 className="font-semibold text-lg mb-1">Submitted!</h3>
@@ -538,7 +538,7 @@ export default function HardwareCatalogPage() {
         </div>
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Package className="h-12 w-12 text-muted-foreground/40 mb-4" />
+          <Package className="size-12 text-muted-foreground/40 mb-4" />
           <h3 className="font-semibold text-lg mb-1">No components found</h3>
           <p className="text-muted-foreground text-sm">Try adjusting your filters</p>
         </div>

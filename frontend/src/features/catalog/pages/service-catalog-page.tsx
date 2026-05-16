@@ -199,7 +199,7 @@ export default function ServiceCatalogPage() {
 
       {items.length === 0 && !isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <Book className="h-12 w-12 text-muted-foreground/40 mb-4" />
+          <Book className="size-12 text-muted-foreground/40 mb-4" />
           <h3 className="font-semibold text-lg mb-1">No services found</h3>
           <p className="text-muted-foreground text-sm">Try adjusting your filters.</p>
         </div>

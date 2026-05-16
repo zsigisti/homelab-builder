@@ -114,7 +114,7 @@ export default function ShoppingListPage() {
   if (hardwareNodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center p-12 text-center border rounded-lg bg-muted/20 min-h-100">
-        <ShoppingCart className="h-16 w-16 mb-6 text-muted-foreground/50" />
+        <ShoppingCart className="size-16 mb-6 text-muted-foreground/50" />
         <h3 className="text-xl font-bold mb-2">Your shopping list is empty</h3>
         <p className="text-muted-foreground mb-6 max-w-md">
           Start by adding services or hardware in the Visual Builder to generate a parts list.

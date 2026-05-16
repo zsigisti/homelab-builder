@@ -219,7 +219,7 @@ export default function HomelabGuidePage() {
             {planningSteps.map(step => (
               <Card key={step.title} className="border-border/70 bg-card/80 hover-lift">
                 <CardHeader>
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                     <step.icon className="size-5" />
                   </div>
                   <CardTitle className="text-xl">{step.title}</CardTitle>
