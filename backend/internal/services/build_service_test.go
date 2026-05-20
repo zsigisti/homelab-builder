@@ -176,3 +176,77 @@ func TestBuildService_Update_InvalidEdgeReferenceRollsBack(t *testing.T) {
 		t.Fatalf("expected original edge to remain, got %d", len(reloaded.Edges))
 	}
 }
+
+func TestBuildService_TotalPower(t *testing.T) {
+	tx := testTx(t)
+	svc := NewBuildService(tx)
+	user := models.User{Email: uuid.NewString() + "@t.com", Name: "PowerTest", GoogleID: uuid.NewString()}
+	tx.Create(&user)
+
+	input := SyncGraphInput{
+		Name: "Power Build",
+		Nodes: []NodeDTO{
+			{
+				ID: "n1", Type: "server", Name: "Server 1", PowerDraw: 150.5,
+				InternalComponents: []ComponentDTO{
+					{ID: "c1", Type: "disk", Name: "HDD", PowerDraw: 10.0},
+					{ID: "c2", Type: "gpu", Name: "GPU", PowerDraw: 250.0},
+				},
+			},
+			{ID: "n2", Type: "switch", Name: "Switch 1", PowerDraw: 25.0},
+		},
+	}
+	build, err := svc.Create(user.ID, input)
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	loaded, err := svc.GetByID(build.ID)
+	if err != nil {
+		t.Fatalf("GetByID failed: %v", err)
+	}
+
+	expectedPower := 150.5 + 10.0 + 250.0 + 25.0
+	if loaded.TotalPower != expectedPower {
+		t.Errorf("expected TotalPower %f, got %f", expectedPower, loaded.TotalPower)
+	}
+}
+
+func TestBuildService_Update_PowerDraw(t *testing.T) {
+	tx := testTx(t)
+	svc := NewBuildService(tx)
+	user := models.User{Email: uuid.NewString() + "@t.com", Name: "UpdatePowerTest", GoogleID: uuid.NewString()}
+	tx.Create(&user)
+
+	// Initial Build
+	build, _ := svc.Create(user.ID, SyncGraphInput{
+		Name: "Power Update Build",
+		Nodes: []NodeDTO{
+			{ID: "n1", Type: "server", Name: "Server Initial", PowerDraw: 100.0},
+		},
+	})
+
+	// Update Build with new node and new power
+	updatedBuild, err := svc.Update(build.ID, user.ID, SyncGraphInput{
+		Name: "Power Update Build",
+		Nodes: []NodeDTO{
+			{ID: "n1", Type: "server", Name: "Server Updated", PowerDraw: 150.0},
+			{ID: "n2", Type: "switch", Name: "Switch New", PowerDraw: 40.0},
+		},
+	})
+
+	if err != nil {
+		t.Fatalf("Update failed: %v", err)
+	}
+
+	// Fetch to confirm calculations
+	loaded, err := svc.GetByID(updatedBuild.ID)
+	if err != nil {
+		t.Fatalf("GetByID failed: %v", err)
+	}
+
+	expectedPower := 150.0 + 40.0
+	if loaded.TotalPower != expectedPower {
+		t.Errorf("expected TotalPower %f after update, got %f", expectedPower, loaded.TotalPower)
+	}
+}

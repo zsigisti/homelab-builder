@@ -175,6 +175,7 @@ export interface HardwareComponent {
   id: string;
   type: HardwareType;
   name: string;
+  power_draw?: number;
   details?: HardwareSpec;
 }
 
@@ -186,6 +187,7 @@ export interface HardwareNode {
   mac_address?: string;
   subnet_mask?: string;
   gateway?: string;
+  power_draw?: number;
   x: number;
   y: number;
   details?: HardwareSpec;

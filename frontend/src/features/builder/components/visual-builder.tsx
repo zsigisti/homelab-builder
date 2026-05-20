@@ -22,9 +22,10 @@ import { RACK_U_HEIGHT_PX, RACK_HEADER_PX, RACK_RAIL_WIDTH, DEFAULT_DEVICE_U } f
 import { NodePropertiesPanel } from './node-properties-panel';
 import { LiveResourceDashboard } from './live-resource-dashboard';
 import { Button } from '../../../components/ui/button';
-import { Wand2, Menu, Save, Folder, Download, LogOut, Route } from 'lucide-react';
+import { Wand2, Menu, Save, Folder, Download, LogOut, Route, Image as ImageIcon } from 'lucide-react';
 import type { HardwareType, HardwareNode } from '../../../types';
 import { buildApi } from '../api/builds';
+import { toPng, toSvg } from 'html-to-image';
 import { nodeHasDynamicPorts, canNodeBeNested, canNodeHostNested, canNodeConnectToAny } from '../../../lib/hardware-config';
 import { getNodePortCount } from '../lib/port-count';
 import { useAuth } from '../../admin/hooks/use-auth';
@@ -88,6 +89,34 @@ function Flow() {
   const navigate = useNavigate();
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { logout, updatePreferences } = useAuth();
+
+  const downloadImage = (format: 'png' | 'svg') => {
+    if (!reactFlowWrapper.current) return;
+    const elem = reactFlowWrapper.current;
+    
+    // Quick notification
+    toast.info(`Exporting ${format.toUpperCase()}...`);
+
+    const op = format === 'png' ? toPng : toSvg;
+    op(elem, {
+      backgroundColor: '#09090b',
+      filter: (node: HTMLElement) => {
+        if (node.classList && (node.classList.contains('react-flow__panel') || node.classList.contains('react-flow__controls'))) {
+          return false;
+        }
+        return true;
+      }
+    }).then((dataUrl) => {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = `homelab-${projectName || 'export'}.${format}`;
+      a.click();
+      toast.success(`Export successful.`);
+    }).catch(err => {
+      console.error('Failed to export image', err);
+      toast.error('Failed to export image.');
+    });
+  };
 
   // Joyride Tour State
   const [runTour, setRunTour] = useState(false);
@@ -724,7 +753,14 @@ function Flow() {
                   <Folder className="mr-2 size-4" /> My Projects
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate('/generate')}>
-                  <Download className="mr-2 size-4" /> Export / Generate Config
+                  <Download className="mr-2 size-4" /> Generate Config
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => downloadImage('png')}>
+                  <ImageIcon className="mr-2 size-4" /> Export Diagram (PNG)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => downloadImage('svg')}>
+                  <ImageIcon className="mr-2 size-4" /> Export Diagram (SVG)
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate('/services')}>

@@ -109,6 +109,7 @@ type HardwareComponent struct {
 	Category     string          `gorm:"not null;index" json:"category"`
 	Brand        string          `gorm:"not null;index" json:"brand"`
 	Model        string          `gorm:"not null" json:"model"`
+	PowerDraw    float64         `gorm:"default:0" json:"power_draw"`
 	Spec         json.RawMessage `gorm:"type:jsonb;not null;default:'{}'" json:"spec"`
 	PriceEst     float64         `gorm:"default:0" json:"price_est"`
 	Currency     string          `gorm:"default:'EUR'" json:"currency"`
@@ -150,14 +151,15 @@ func (SteeringRule) TableName() string { return "steering_rules" }
 
 // Build represents a saved visual builder project
 type Build struct {
-	ID        uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	UserID    uuid.UUID       `gorm:"type:uuid;not null;index" json:"user_id"` // Owner
-	Name      string          `gorm:"not null" json:"name"`
-	Settings  json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"settings"` // UI state e.g. boughtItems
-	Thumbnail string          `gorm:"default:''" json:"thumbnail"`             // Base64 or URL
-	User      *User           `gorm:"foreignKey:UserID" json:"-"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID         uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	UserID     uuid.UUID       `gorm:"type:uuid;not null;index" json:"user_id"` // Owner
+	Name       string          `gorm:"not null" json:"name"`
+	Settings   json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"settings"` // UI state e.g. boughtItems
+	Thumbnail  string          `gorm:"default:''" json:"thumbnail"`             // Base64 or URL
+	TotalPower float64         `gorm:"-" json:"total_power"`                    // Transient, calculated on fetch
+	User       *User           `gorm:"foreignKey:UserID" json:"-"`
+	CreatedAt  time.Time       `json:"created_at"`
+	UpdatedAt  time.Time       `json:"updated_at"`
 
 	// Relations
 	Nodes []Node `gorm:"foreignKey:BuildID" json:"nodes,omitempty"`
@@ -168,18 +170,19 @@ func (Build) TableName() string { return "builds" }
 
 // Node represents a hardware node in the graph
 type Node struct {
-	ID        uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	BuildID   uuid.UUID       `gorm:"type:uuid;not null;index" json:"build_id"`
-	Type      string          `gorm:"not null" json:"type"` // server, router, switch
-	Name      string          `gorm:"not null" json:"name"`
-	X         float64         `gorm:"not null;default:0" json:"x"`
-	Y         float64         `gorm:"not null;default:0" json:"y"`
-	IP        string          `gorm:"default:''" json:"ip"`
-	MacAddress string         `gorm:"default:''" json:"mac_address"`
-	Details   json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"details"` // Hardware specs
-	ParentID  *uuid.UUID      `gorm:"type:uuid" json:"parent_id,omitempty"`   // For nested components
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID         uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	BuildID    uuid.UUID       `gorm:"type:uuid;not null;index" json:"build_id"`
+	Type       string          `gorm:"not null" json:"type"` // server, router, switch
+	Name       string          `gorm:"not null" json:"name"`
+	X          float64         `gorm:"not null;default:0" json:"x"`
+	Y          float64         `gorm:"not null;default:0" json:"y"`
+	PowerDraw  float64         `gorm:"default:0" json:"power_draw"`
+	IP         string          `gorm:"default:''" json:"ip"`
+	MacAddress string          `gorm:"default:''" json:"mac_address"`
+	Details    json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"details"` // Hardware specs
+	ParentID   *uuid.UUID      `gorm:"type:uuid" json:"parent_id,omitempty"`   // For nested components
+	CreatedAt  time.Time       `json:"created_at"`
+	UpdatedAt  time.Time       `json:"updated_at"`
 
 	ServiceInstances   []ServiceInstance `gorm:"foreignKey:NodeID;constraint:OnDelete:CASCADE;" json:"service_instances,omitempty"`
 	VirtualMachines    []VirtualMachine  `gorm:"foreignKey:NodeID;constraint:OnDelete:CASCADE;" json:"virtual_machines,omitempty"`
@@ -194,6 +197,7 @@ type NodeComponent struct {
 	NodeID    uuid.UUID       `gorm:"type:uuid;not null;index" json:"node_id"`
 	Type      string          `gorm:"not null" json:"type"` // disk, gpu, hba etc.
 	Name      string          `gorm:"not null" json:"name"`
+	PowerDraw float64         `gorm:"default:0" json:"power_draw"`
 	Details   json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"details"` // Component specs
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
@@ -206,6 +210,7 @@ type CatalogComponent struct {
 	ID        uuid.UUID       `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
 	Type      string          `gorm:"not null;index" json:"type"` // disk, gpu, ram, etc.
 	Name      string          `gorm:"not null" json:"name"`
+	PowerDraw float64         `gorm:"default:0" json:"power_draw"`
 	Details   json.RawMessage `gorm:"type:jsonb;default:'{}'" json:"details"`
 	CreatedAt time.Time       `json:"created_at"`
 	UpdatedAt time.Time       `json:"updated_at"`
@@ -215,18 +220,18 @@ func (CatalogComponent) TableName() string { return "catalog_components" }
 
 // VirtualMachine represents a nested VM/Container on a node
 type VirtualMachine struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
-	NodeID    uuid.UUID `gorm:"type:uuid;not null;index" json:"node_id"`
-	Name      string    `gorm:"not null" json:"name"`
-	Type      string    `gorm:"not null" json:"type"` // vm, container, lxc
-	IP        string    `gorm:"default:''" json:"ip"`
-	MacAddress string   `gorm:"default:''" json:"mac_address"`
-	OS        string    `gorm:"default:''" json:"os"`
-	CPUCores  float64   `gorm:"default:0" json:"cpu_cores"`
-	RAMMB     int       `gorm:"default:0" json:"ram_mb"`
-	Status    string    `gorm:"default:'stopped'" json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID         uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey" json:"id"`
+	NodeID     uuid.UUID `gorm:"type:uuid;not null;index" json:"node_id"`
+	Name       string    `gorm:"not null" json:"name"`
+	Type       string    `gorm:"not null" json:"type"` // vm, container, lxc
+	IP         string    `gorm:"default:''" json:"ip"`
+	MacAddress string    `gorm:"default:''" json:"mac_address"`
+	OS         string    `gorm:"default:''" json:"os"`
+	CPUCores   float64   `gorm:"default:0" json:"cpu_cores"`
+	RAMMB      int       `gorm:"default:0" json:"ram_mb"`
+	Status     string    `gorm:"default:'stopped'" json:"status"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 func (VirtualMachine) TableName() string { return "virtual_machines" }

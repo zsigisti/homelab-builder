@@ -15,10 +15,13 @@ import (
 	"gorm.io/gorm"
 )
 
+// Update the database hostname for the recommendation service test
+const RecommendationServiceDBHost = "homelab-builder-db"
+
 func setupTestDB(t *testing.T) *gorm.DB {
 	host := os.Getenv("DB_HOST")
 	if host == "" {
-		host = "localhost"
+		host = RecommendationServiceDBHost
 	}
 	dbName := os.Getenv("TEST_DB_NAME")
 	if dbName == "" {

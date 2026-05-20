@@ -30,7 +30,17 @@ export function LiveResourceDashboard() {
     let usedCpuThreads = 0;
     let usedStorageGb = 0;
 
+    let totalPowerDraw = 0;
+
     hardwareNodes.forEach(node => {
+      // Calculate Power
+      totalPowerDraw += node.power_draw || 0;
+      if (node.internal_components) {
+        node.internal_components.forEach(comp => {
+          totalPowerDraw += comp.power_draw || 0;
+        });
+      }
+
       if (!isComputeNode(node.type)) return;
 
       // Capacity based on node details
@@ -88,11 +98,16 @@ export function LiveResourceDashboard() {
       totalStorageGb,
       usedStorageGb,
       storagePercent,
-      hasCompute: totalRamMb > 0 || totalCpuThreads > 0,
+      totalPowerDraw,
+      hasCompute: totalRamMb > 0 || totalCpuThreads > 0, // Wait, maybe we want to show power even without compute
     };
   }, [hardwareNodes]);
 
-  if (!stats.hasCompute) return null;
+  const [costPerKwh, setCostPerKwh] = useState<number>(0.15); // e.g. $0.15 / kWh
+  // Calculate running cost 24/7 for a month (730 hours)
+  const monthlyCost = (stats.totalPowerDraw / 1000) * 730 * costPerKwh;
+
+  if (!stats.hasCompute && stats.totalPowerDraw === 0) return null;
 
   const maxPercent = Math.max(stats.cpuPercent, stats.ramPercent, stats.storagePercent);
 
@@ -208,6 +223,40 @@ export function LiveResourceDashboard() {
                 indicatorClassName={getProgressColor(stats.storagePercent)}
               />
             </div>
+
+            {stats.totalPowerDraw > 0 && (
+              <div className="pt-2 mt-2 border-t space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground">
+                    <Activity className="size-3.5" /> Power Draw
+                  </span>
+                  <span className="font-mono font-medium">
+                    {stats.totalPowerDraw} W
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="flex items-center gap-1.5 text-muted-foreground whitespace-nowrap">
+                    Cost/kWh
+                  </span>
+                  <div className="flex items-center">
+                    <span className="text-muted-foreground mr-1">$</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="w-16 bg-background border px-1 py-0.5 rounded text-right font-mono"
+                      value={costPerKwh}
+                      onChange={(e) => setCostPerKwh(parseFloat(e.target.value) || 0)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-xs uppercase font-bold text-muted-foreground bg-muted/30 p-2 rounded-md">
+                  <span>Est. Monthly</span>
+                  <span className="text-foreground tracking-wide font-mono">${monthlyCost.toFixed(2)} / mo</span>
+                </div>
+              </div>
+            )}
           </CardContent>
         )}
       </Card>

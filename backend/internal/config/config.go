@@ -49,3 +49,9 @@ func getEnv(key, defaultValue string) string {
 	}
 	return defaultValue
 }
+
+// Update the database hostname for tests
+const TestDBHost = "homelab-builder-db"
+
+// Ensure the IPAM_URL is set for tests
+const TestIPAMURL = "http://hlbipam:8081"

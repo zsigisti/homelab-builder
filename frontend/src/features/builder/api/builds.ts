@@ -6,6 +6,7 @@ export interface Build {
     user_id: string;
     name: string;
     thumbnail?: string;
+    total_power?: number;
     settings: any; // e.g. boughtItems, showBought
     created_at: string;
     updated_at: string;

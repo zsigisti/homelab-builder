@@ -122,14 +122,15 @@ func (s *BuildService) syncGraph(tx *gorm.DB, buildID uuid.UUID, input SyncGraph
 		detailsJSON, _ := json.Marshal(n.Details)
 
 		node := models.Node{
-			ID:      uid,
-			BuildID: buildID,
-			Type:    n.Type,
-			Name:    n.Name,
-			X:       n.X,
-			Y:       n.Y,
-			IP:      n.IP,
-			Details: detailsJSON,
+			ID:        uid,
+			BuildID:   buildID,
+			Type:      n.Type,
+			Name:      n.Name,
+			X:         n.X,
+			Y:         n.Y,
+			PowerDraw: n.PowerDraw,
+			IP:        n.IP,
+			Details:   detailsJSON,
 		}
 		if n.ParentID != nil && *n.ParentID != "" {
 			if parsed, err := uuid.Parse(*n.ParentID); err == nil {
@@ -172,11 +173,12 @@ func (s *BuildService) syncGraph(tx *gorm.DB, buildID uuid.UUID, input SyncGraph
 			}
 			compDetailsJSON, _ := json.Marshal(comp.Details)
 			cModel := models.NodeComponent{
-				ID:      compUID,
-				NodeID:  uid,
-				Type:    comp.Type,
-				Name:    comp.Name,
-				Details: compDetailsJSON,
+				ID:        compUID,
+				NodeID:    uid,
+				Type:      comp.Type,
+				Name:      comp.Name,
+				PowerDraw: comp.PowerDraw,
+				Details:   compDetailsJSON,
 			}
 			if err := tx.Create(&cModel).Error; err != nil {
 				return err
@@ -278,6 +280,16 @@ func (s *BuildService) GetByID(buildID uuid.UUID) (*models.Build, error) {
 		First(&build, "id = ?", buildID).Error; err != nil {
 		return nil, err
 	}
+
+	var totalPower float64
+	for _, n := range build.Nodes {
+		totalPower += n.PowerDraw
+		for _, comp := range n.InternalComponents {
+			totalPower += comp.PowerDraw
+		}
+	}
+	build.TotalPower = totalPower
+
 	return &build, nil
 }
 
@@ -296,6 +308,7 @@ type NodeDTO struct {
 	Name               string         `json:"name"`
 	X                  float64        `json:"x"`
 	Y                  float64        `json:"y"`
+	PowerDraw          float64        `json:"power_draw"`
 	IP                 string         `json:"ip"`
 	SubnetMask         string         `json:"subnet_mask,omitempty"`
 	Gateway            string         `json:"gateway,omitempty"`
@@ -306,10 +319,11 @@ type NodeDTO struct {
 }
 
 type ComponentDTO struct {
-	ID      string         `json:"id"`
-	Type    string         `json:"type"`
-	Name    string         `json:"name"`
-	Details map[string]any `json:"details"`
+	ID        string         `json:"id"`
+	Type      string         `json:"type"`
+	Name      string         `json:"name"`
+	PowerDraw float64        `json:"power_draw"`
+	Details   map[string]any `json:"details"`
 }
 
 type VMDTO struct {
