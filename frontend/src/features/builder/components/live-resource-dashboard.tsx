@@ -135,7 +135,7 @@ export function LiveResourceDashboard() {
   };
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 pointer-events-auto">
+    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 transition-all duration-300 pointer-events-auto" data-hide-export="true">
       <Card
         className={cn(
           `shadow-none overflow-hidden transition-all duration-300 bg-card ${isExpanded ? 'w-[320px]' : 'w-50'}`,

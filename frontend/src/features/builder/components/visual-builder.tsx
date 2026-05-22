@@ -20,7 +20,6 @@ import { HardwareNode as HardwareNodeComponent } from './hardware-node';
 import { RackNode } from './rack-node';
 import { RACK_U_HEIGHT_PX, RACK_HEADER_PX, RACK_RAIL_WIDTH, DEFAULT_DEVICE_U } from './rack-node';
 import { NodePropertiesPanel } from './node-properties-panel';
-import { LiveResourceDashboard } from './live-resource-dashboard';
 import { Button } from '../../../components/ui/button';
 import { Wand2, Menu, Save, Folder, Download, LogOut, Route, Image as ImageIcon } from 'lucide-react';
 import type { HardwareType, HardwareNode } from '../../../types';
@@ -65,7 +64,7 @@ const shortcuts: Shortcut[] = [
 
 function ShortcutHints() {
   return (
-    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-3 py-1.5 rounded-full bg-card border border-border text-[10px] text-muted-foreground pointer-events-none select-none">
+    <div id="shortcut-hints" className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10 flex items-center gap-3 px-3 py-1.5 rounded-full bg-card border border-border text-[10px] text-muted-foreground pointer-events-none select-none">
       {shortcuts.map((sh: Shortcut, iter: number) =>
         iter === shortcuts.length - 1 ? (
           <span key={iter} className="flex flex-col items-center">
@@ -99,9 +98,16 @@ function Flow() {
 
     const op = format === 'png' ? toPng : toSvg;
     op(elem, {
-      backgroundColor: '#09090b',
+      backgroundColor: 'transparent',
       filter: (node: HTMLElement) => {
-        if (node.classList && (node.classList.contains('react-flow__panel') || node.classList.contains('react-flow__controls'))) {
+        // Hide panels, controls, shortcuts, and dashboard
+        if (node.classList && (
+          node.classList.contains('react-flow__panel') || 
+          node.classList.contains('react-flow__controls') ||
+          node.classList.contains('react-flow__attribution') ||
+          node.id === 'shortcut-hints' ||
+          node.getAttribute('data-hide-export') === 'true'
+        )) {
           return false;
         }
         return true;
@@ -700,8 +706,6 @@ function Flow() {
       <HardwareToolbox />
 
       <div className="flex-1 h-full relative" ref={reactFlowWrapper}>
-        <LiveResourceDashboard />
-
         <ReactFlow
           nodes={nodes}
           edges={edges}

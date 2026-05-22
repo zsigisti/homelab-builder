@@ -28,6 +28,7 @@ import { Card } from '../../../components/ui/card';
 import { useUserSelections } from '../../catalog/api/use-services';
 import { useBuilderStore } from '../store/builder-store';
 import { Github } from '../../../components/icons/github';
+import { PowerUsagePanel } from './power-usage-panel';
 
 // ─── Basic component types ─────────────────────────────────────────────────────
 const HARDWARE_TOOLS: {
@@ -414,7 +415,7 @@ export function HardwareToolbox() {
     fetchServices();
   }, [fetchServices]);
 
-  const [activeTab, setActiveTab] = useState<'components' | 'presets' | 'services'>('components');
+  const [activeTab, setActiveTab] = useState<'components' | 'presets' | 'services' | 'power'>('components');
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
     new Set(['Single Board Computers', 'Mini PCs']),
   );
@@ -564,6 +565,7 @@ export function HardwareToolbox() {
                 { id: 'components', label: 'Types', icon: LayoutGrid },
                 { id: 'presets', label: 'Presets', icon: Package },
                 { id: 'services', label: 'Services', icon: AppWindow },
+                { id: 'power', label: 'Power', icon: Zap },
               ] as const
             ).map(tab => {
               const Icon = tab.icon;
@@ -831,6 +833,11 @@ export function HardwareToolbox() {
                   })}
                 </div>
               </div>
+            )}
+
+            {/* ── Power tab ── */}
+            {activeTab === 'power' && (
+              <PowerUsagePanel />
             )}
           </div>
 
